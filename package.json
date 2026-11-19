@@ -1,0 +1,130 @@
+{
+  "name": "nextcloud-talk-user",
+  "version": "0.1.0",
+  "description": "OpenClaw channel plugin: Nextcloud Talk as a regular Nextcloud user (instead of a Talk bot).",
+  "license": "MIT",
+  "author": "Robert Gerlach",
+  "contributors": [
+    "Claude (AI agent, Anthropic)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "type": "module",
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && node scripts/generate-manifest.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "prepack": "npm run build"
+  },
+  "files": [
+    "dist/**",
+    "openclaw.plugin.json",
+    "README.md",
+    "assets/icon.png",
+    "assets/activity.svg",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "openclaw": "2026.11.5",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.11.5"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ],
+    "setupEntry": "./dist/setup-entry.js",
+    "runtimeSetupEntry": "./dist/setup-entry.js",
+    "setupFeatures": {
+      "configPromotion": true
+    },
+    "channel": {
+      "id": "nextcloud-talk-user",
+      "configuredState": {
+        "specifier": "./dist/configured-state.js",
+        "exportName": "hasConfiguredNextcloudTalkChannelState"
+      },
+      "label": "Nextcloud Talk (User)",
+      "selectionLabel": "Nextcloud Talk as user (self-hosted)",
+      "docsPath": "",
+      "docsLabel": "nextcloud-talk-user",
+      "blurb": "Self-hosted chat via Nextcloud Talk, signed in as a regular Nextcloud user.",
+      "aliases": [
+        "nc-talk-user"
+      ],
+      "order": 65,
+      "quickstartAllowFrom": true,
+      "setup": {
+        "fields": [
+          {
+            "key": "baseUrl",
+            "kind": "string",
+            "cli": {
+              "flags": "--base-url <url>",
+              "description": "Nextcloud base URL"
+            }
+          },
+          {
+            "key": "user",
+            "kind": "string",
+            "cli": {
+              "flags": "--user <uid>",
+              "description": "Nextcloud user the plugin signs in as"
+            }
+          },
+          {
+            "key": "password",
+            "kind": "string",
+            "sensitive": true,
+            "cli": {
+              "flags": "--password <app-password>",
+              "description": "App password of that Nextcloud user"
+            }
+          },
+          {
+            "key": "passwordFile",
+            "kind": "string",
+            "sensitive": true,
+            "cli": {
+              "flags": "--password-file <path>",
+              "description": "File containing the app password"
+            }
+          }
+        ]
+      }
+    },
+    "install": {
+      "npmSpec": "nextcloud-talk-user",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.9.7"
+    },
+    "compat": {
+      "pluginApi": ">=2026.11.5"
+    },
+    "build": {
+      "openclawVersion": "2026.11.5"
+    },
+    "release": {
+      "publishToClawHub": false,
+      "publishToNpm": false
+    }
+  },
+  "dependencies": {
+    "saxes": "6.0.0",
+    "zod": "4.6.7"
+  }
+}

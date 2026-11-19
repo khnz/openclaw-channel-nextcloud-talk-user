@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "sourceMap": false,
+    "declaration": false
+  },
+  "include": ["*.ts", "src/**/*.ts", "types/**/*.d.ts"],
+  "exclude": [
+    "node_modules",
+    "arbeit",
+    "dist",
+    "vitest.config.ts",
+    "**/*.test.ts",
+    "src/**/*test-harness.ts",
+    "src/**/*test-fixtures.ts",
+    "src/**/*.test-harness.ts"
+  ]
+}
