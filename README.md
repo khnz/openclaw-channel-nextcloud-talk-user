@@ -42,6 +42,12 @@ requires `pluginApi >=2026.11.5`.
 **Agent tools**
 - Message actions `send`, `react` and `read` (history and context around a message, can be
   disabled with `actions.messages: false`).
+- All agent actions (sending text and files, reacting, reading history) only work in rooms
+  the configuration releases, by the same rules as incoming messages: group rooms per
+  `groupPolicy` and `rooms` (never with `enabled: false`), one-to-one rooms only with a
+  participant from `allowFrom` or an approved pairing (`dmPolicy`). Membership alone is not
+  enough; note-to-self rooms and rooms whose type cannot be determined are refused. See
+  [Releasing rooms](#releasing-rooms).
 
 **Rooms and access**
 - Nextcloud controls rooms: once the account is invited, the room is there; additionally
@@ -109,8 +115,69 @@ More settings:
 | `mediaMaxMb` | 20 | Attachment size limit in MB (unless OpenClaw sets another limit) |
 | `actions.messages` | `true` | Offer the history tool `read` |
 
-Note: an entry in `rooms` turns the room list into an allowlist. If you control rooms through
-Nextcloud membership and still configure single rooms, add `"*": {}`.
+### Releasing rooms
+
+Which rooms are released decides two things at once:
+
+- whose incoming messages reach the agent, and
+- where the agent may act on its own: send text and files, react, read history.
+
+Membership in Nextcloud alone is not enough for the second part. This applies to agent
+actions only in this plugin: other OpenClaw channels use these settings for incoming messages
+only. Note-to-self rooms and rooms whose type cannot be determined (for example because the
+account is not a member) are always refused.
+
+**Single group rooms.** List them under `rooms`; the key is the room token, the last part of
+the room URL (`https://cloud.example.com/call/<token>`). As soon as `rooms` has an entry, only
+listed rooms are released:
+
+```json5
+{
+  groupPolicy: "open",
+  rooms: {
+    "abc123xy": {},                          // released
+    "q7w8e9r0": { requireMention: false },   // released, reacts to every message
+    "zz11yy22": { enabled: false },          // listed but disabled
+  },
+}
+```
+
+**All group rooms.** Leave `rooms` out, or add the wildcard `"*": {}` if you still want to set
+options for single rooms. `groupPolicy` must not be `"disabled"`; set it to `"open"` explicitly,
+otherwise the OpenClaw default applies. A room with `enabled: false` stays blocked.
+
+```json5
+{
+  groupPolicy: "open",
+  rooms: {
+    "*": {},                                 // every room the account is a member of
+    "zz11yy22": { enabled: false },          // except this one
+  },
+}
+```
+
+**One-to-one rooms.** A one-to-one room is released when the other participant matches
+`allowFrom` or, with `dmPolicy: "pairing"`, has an approved pairing. `dmPolicy: "disabled"`
+blocks all of them. To release all one-to-one rooms, use `allowFrom: ["*"]` (or
+`dmPolicy: "open"`):
+
+```json5
+{
+  dmPolicy: "allowlist",
+  allowFrom: ["users/alice", "users/bob"],   // only these two
+  // allowFrom: ["*"],                       // everyone
+}
+```
+
+`allowFrom: ["*"]` also means that every Nextcloud user may message the agent directly, and that
+the agent may message everyone on its own (unless `proactiveDm: "off"`).
+
+Who may write in group rooms is set separately by `groupAllowFrom` and `rooms.<token>.allowFrom`;
+these do not affect where the agent may act.
+
+**Security.** Releasing all rooms removes the boundary between them: a prompt injection in any
+released room can make the agent read another released room and post its content elsewhere.
+Release only the rooms the agent needs, and use a dedicated Nextcloud account for it.
 
 ## Drop-in replacement for nextcloud-talk
 

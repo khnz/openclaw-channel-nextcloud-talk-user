@@ -1,12 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { resolveNextcloudTalkAccount } from "./accounts.js";
 import { readNextcloudTalkHistory } from "./history.js";
 import type { NextcloudTalkRawHttp } from "./receive/talk-client.js";
 
+// Room release is covered in room-access.test.ts; this file exercises the transport only.
+vi.mock("./room-access.js", () => ({ assertNextcloudTalkRoomAccess: vi.fn(async () => {}) }));
+
 const BASE = "https://cloud.example.test";
-const account = resolveNextcloudTalkAccount({
-  cfg: { channels: { "nextcloud-talk-user": { baseUrl: BASE, apiUser: "agent", apiPassword: "pw" } } },
-});
+const cfg = { channels: { "nextcloud-talk-user": { baseUrl: BASE, apiUser: "agent", apiPassword: "pw" } } };
+const account = resolveNextcloudTalkAccount({ cfg });
 
 const msg = (id: number, extra: Record<string, unknown> = {}) => ({
   id,
@@ -62,7 +64,7 @@ function fakeServer(messages: ReturnType<typeof msg>[], status = 200) {
 }
 
 const read = (http: NextcloudTalkRawHttp, query: Partial<Parameters<typeof readNextcloudTalkHistory>[0]["query"]>) =>
-  readNextcloudTalkHistory({ account, http, query: { roomToken: "room1234", ...query } });
+  readNextcloudTalkHistory({ cfg, account, http, query: { roomToken: "room1234", ...query } });
 
 describe("history tool", () => {
   const messages = Array.from({ length: 10 }, (_, i) => msg(i + 1));

@@ -13,6 +13,7 @@ import {
 } from "./guarded-response.js";
 import { parseNextcloudTalkTarget, stripNextcloudTalkTargetPrefix } from "./normalize.js";
 import { resolveNextcloudTalkAllowlistMatch } from "./policy.js";
+import { assertNextcloudTalkRoomAccess } from "./room-access.js";
 import { getOptionalNextcloudTalkRuntime } from "./runtime.js";
 import type { CoreConfig, NextcloudTalkSendResult } from "./types.js";
 import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
@@ -282,12 +283,21 @@ export function clearNextcloudTalkDirectRoomCache(): void {
 async function resolveSendRoomToken(
   context: ReturnType<typeof resolveNextcloudTalkSendContext>,
   to: string,
+  options: { bypassRoomAccessForPairingChallenge?: boolean } = {},
 ): Promise<string> {
   const target = parseNextcloudTalkTarget(to);
   if (!target) {
     throw new Error("Room token or user:<uid> is required for Nextcloud Talk sends");
   }
   if (target.kind === "room") {
+    // Membership alone does not release a room: the config decides (see room-access.ts).
+    if (!options.bypassRoomAccessForPairingChallenge) {
+      await assertNextcloudTalkRoomAccess({
+        cfg: context.cfg,
+        account: context.account,
+        roomToken: target.token,
+      });
+    }
     return target.token;
   }
   const { account, apiUser } = context;
@@ -368,6 +378,11 @@ export async function sendMessageNextcloudTalk(
     referenceId?: string;
     onPlatformSendDispatch?: () => Promise<void>;
     assertDirectAdapterHandoff?: () => void;
+    /**
+     * Only for the pairing challenge to a sender who is not released yet; it answers in the
+     * one-to-one room the sender just wrote in. Never set for agent-initiated sends.
+     */
+    bypassRoomAccessForPairingChallenge?: boolean;
   },
 ): Promise<NextcloudTalkSendResult> {
   const context = resolveNextcloudTalkSendContext(opts);
@@ -384,7 +399,9 @@ export async function sendMessageNextcloudTalk(
   });
   const message = convertMarkdownTables(text.trim(), tableMode);
   const referenceId = opts.referenceId ?? createNextcloudTalkReferenceId();
-  const roomToken = await resolveSendRoomToken(context, to);
+  const roomToken = await resolveSendRoomToken(context, to, {
+    bypassRoomAccessForPairingChallenge: opts.bypassRoomAccessForPairingChallenge,
+  });
 
   await opts.onPlatformSendDispatch?.();
   const attempt = await postWithReconcile({
@@ -496,6 +513,11 @@ export async function sendReactionNextcloudTalk(
 ): Promise<void> {
   const context = resolveNextcloudTalkSendContext(opts);
   const normalizedToken = normalizeRoomToken(roomToken);
+  await assertNextcloudTalkRoomAccess({
+    cfg: context.cfg,
+    account: context.account,
+    roomToken: normalizedToken,
+  });
 
   const { response, release } = await requestNextcloudTalkAsUser({
     context,

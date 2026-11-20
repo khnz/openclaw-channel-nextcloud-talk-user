@@ -422,6 +422,7 @@ describe("nextcloud-talk-user inbound behavior", () => {
     expect(mocks.send).toHaveBeenCalledExactlyOnceWith("room-1", "Pair with code 123456", {
       cfg: defaultConfig,
       accountId: "default",
+      bypassRoomAccessForPairingChallenge: true,
     });
     expect(statusSink).toHaveBeenCalledWith({ lastInboundAt: 1_736_380_800_000 });
     const outboundStatus = statusSink.mock.calls

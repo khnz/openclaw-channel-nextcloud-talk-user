@@ -96,6 +96,7 @@ it("offers and handles read with cursor parameters", async () => {
     { action: "read" },
   );
   expect(readNextcloudTalkHistory).toHaveBeenCalledWith({
+    cfg: expect.any(Object),
     account: expect.objectContaining({ accountId: "work" }),
     query: {
       roomToken: "abc123",

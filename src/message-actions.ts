@@ -128,6 +128,7 @@ export const nextcloudTalkMessageActions: ChannelMessageActionAdapter = {
         return value === undefined || value === null || value === "" ? undefined : String(value);
       };
       const result = await readNextcloudTalkHistory({
+        cfg: cfg as CoreConfig,
         account,
         query: {
           roomToken,

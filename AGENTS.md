@@ -46,6 +46,8 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
   - `state.ts`, `auto-join.ts`, `notification-level.ts`, `start-account.ts`
 - `src/inbound.ts`, `src/inbound-media.ts`: access checks and handoff to the agent
 - `src/send.ts`, `src/outbound-media.ts`: sending text, reactions and files as the user
+- `src/room-access.ts`, `src/room-info.ts`: room release check for agent actions, room type and
+  one-to-one participant lookup
 - `src/device-login.ts`, `src/setup-*.ts`: setup wizard and Login Flow v2
 - `src/history.ts`, `src/message-actions.ts`: the `read` message action
 - `src/doctor*.ts`: `openclaw doctor` checks; `doctor-contract-api.ts` and `src/doctor-contract.ts`
@@ -69,6 +71,10 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
 - **No lost or duplicated messages.** The per-room cursor only advances after a successful handoff;
   do not replay old history when a room is seen for the first time.
 - **Sending:** keep the `referenceId` check before any retry so messages are never sent twice.
+- **Agent actions only in released rooms.** Reading history, sending text or files and reacting
+  must pass `assertNextcloudTalkRoomAccess` (same rules as incoming messages: `groupPolicy`,
+  `rooms`, `dmPolicy`, `allowFrom`, approved pairings). Membership alone is not enough; unknown
+  rooms are refused. Only the pairing challenge to a sender who is not released yet may bypass it.
 
 ## Tests
 

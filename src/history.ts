@@ -8,6 +8,8 @@ import {
   type NextcloudTalkRawHttp,
 } from "./receive/talk-client.js";
 import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
+import { assertNextcloudTalkRoomAccess } from "./room-access.js";
+import type { CoreConfig } from "./types.js";
 
 /**
  * History tool (message action "read").
@@ -168,6 +170,7 @@ export function toNextcloudTalkHistoryMessage(raw: RawMessage, selfUser: string)
 }
 
 export async function readNextcloudTalkHistory(params: {
+  cfg: CoreConfig;
   account: ResolvedNextcloudTalkAccount;
   query: NextcloudTalkHistoryQuery;
   http?: NextcloudTalkRawHttp;
@@ -188,6 +191,8 @@ export async function readNextcloudTalkHistory(params: {
     throw new Error("Use only one of before, after, around or messageId.");
   }
   const limit = clampLimit(query.limit);
+  // Membership alone does not release a room: the config decides (see room-access.ts).
+  await assertNextcloudTalkRoomAccess({ cfg: params.cfg, account, roomToken });
   const client = createNextcloudTalkClient({
     baseUrl: account.baseUrl,
     user: account.apiUser,

@@ -293,6 +293,7 @@ export async function handleNextcloudTalkInbound(params: {
           await sendMessageNextcloudTalk(roomToken, text, {
             cfg: config,
             accountId: account.accountId,
+            bypassRoomAccessForPairingChallenge: true,
           });
           statusSink?.({ lastOutboundAt: Date.now() });
         },

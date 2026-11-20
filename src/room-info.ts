@@ -14,16 +14,28 @@ const ROOM_CACHE_MAX_ENTRIES = 1000;
 const NEXTCLOUD_TALK_ROOM_INFO_TIMEOUT_MS = 30_000;
 
 type NextcloudTalkRoomKind = "direct" | "group";
-const roomCache = new Map<string, { kind: NextcloudTalkRoomKind | undefined; expiresAt: number }>();
+
+/** Talk room type 1 (one-to-one), 5 (former one-to-one) or 6 (note to self). */
+export type NextcloudTalkRoomInfo = {
+  kind: NextcloudTalkRoomKind;
+  type: number;
+  /**
+   * Other participant of a one-to-one room (type 1 or 5): Talk reports that user's ID as
+   * the room `name`. Undefined for all other room types.
+   */
+  peerUserId?: string;
+};
+
+const roomCache = new Map<string, { info: NextcloudTalkRoomInfo | undefined; expiresAt: number }>();
 
 function cacheRoomInfo(
   key: string,
-  kind: NextcloudTalkRoomKind | undefined,
+  info: NextcloudTalkRoomInfo | undefined,
   ttlMs: number,
-): NextcloudTalkRoomKind | undefined {
-  roomCache.set(key, { kind, expiresAt: performance.now() + ttlMs });
+): NextcloudTalkRoomInfo | undefined {
+  roomCache.set(key, { info, expiresAt: performance.now() + ttlMs });
   pruneMapToMaxSize(roomCache, ROOM_CACHE_MAX_ENTRIES);
-  return kind;
+  return info;
 }
 
 function resolveRoomKindFromType(type: number | undefined): NextcloudTalkRoomKind | undefined {
@@ -42,6 +54,19 @@ export async function resolveNextcloudTalkRoomKind(params: {
   runtime?: RuntimeEnv;
   timeoutMs?: number;
 }): Promise<NextcloudTalkRoomKind | undefined> {
+  return (await resolveNextcloudTalkRoomInfo(params))?.kind;
+}
+
+/**
+ * Room type of a room as seen by the configured user (cached). Undefined when the room is
+ * unknown to the user or the lookup was rejected; transport failures throw.
+ */
+export async function resolveNextcloudTalkRoomInfo(params: {
+  account: ResolvedNextcloudTalkAccount;
+  roomToken: string;
+  runtime?: RuntimeEnv;
+  timeoutMs?: number;
+}): Promise<NextcloudTalkRoomInfo | undefined> {
   const { account, roomToken, runtime } = params;
   const apiCredentials = resolveNextcloudTalkApiCredentials({
     apiUser: account.config.apiUser,
@@ -62,7 +87,7 @@ export async function resolveNextcloudTalkRoomKind(params: {
   ]);
   const cached = roomCache.get(key);
   if (cached && performance.now() < cached.expiresAt) {
-    return cached.kind;
+    return cached.info;
   }
   roomCache.delete(key);
 
@@ -108,10 +133,23 @@ export async function resolveNextcloudTalkRoomKind(params: {
     }
     try {
       const payload = await readProviderJsonResponse<{
-        ocs?: { data?: { type?: number | string } };
+        ocs?: { data?: { type?: number | string; name?: unknown } };
       }>(response, "Nextcloud Talk room info failed");
-      const kind = resolveRoomKindFromType(parseStrictPositiveInteger(payload.ocs?.data?.type));
-      return kind ? cacheRoomInfo(key, kind, ROOM_CACHE_TTL_MS) : undefined;
+      const type = parseStrictPositiveInteger(payload.ocs?.data?.type);
+      const kind = resolveRoomKindFromType(type);
+      if (!kind || type === undefined) {
+        return undefined;
+      }
+      const name = payload.ocs?.data?.name;
+      const peerUserId =
+        (type === 1 || type === 5) && typeof name === "string" && name.trim()
+          ? name.trim()
+          : undefined;
+      return cacheRoomInfo(
+        key,
+        { kind, type, ...(peerUserId ? { peerUserId } : {}) },
+        ROOM_CACHE_TTL_MS,
+      );
     } catch (error) {
       return fallback(error);
     }

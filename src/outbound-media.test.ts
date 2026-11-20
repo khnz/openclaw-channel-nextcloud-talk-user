@@ -17,6 +17,9 @@ import {
 import { sendMessageNextcloudTalk, sendReactionNextcloudTalk } from "./send.js";
 import type { CoreConfig, NextcloudTalkInboundMessage } from "./types.js";
 
+// Room release is covered in room-access.test.ts; this file exercises the transport only.
+vi.mock("./room-access.js", () => ({ assertNextcloudTalkRoomAccess: vi.fn(async () => {}) }));
+
 const transport = vi.hoisted(() => ({
   beforeLookup: undefined as ((url: string) => Promise<void> | void) | undefined,
 }));

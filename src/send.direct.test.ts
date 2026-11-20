@@ -5,6 +5,9 @@ import { normalizeNextcloudTalkMessagingTarget, parseNextcloudTalkTarget } from 
 import { clearNextcloudTalkDirectRoomCache, sendMessageNextcloudTalk } from "./send.js";
 import type { CoreConfig } from "./types.js";
 
+// Room release is covered in room-access.test.ts; this file exercises the transport only.
+vi.mock("./room-access.js", () => ({ assertNextcloudTalkRoomAccess: vi.fn(async () => {}) }));
+
 vi.mock("../runtime-api.js", () => ({ fetchWithSsrFGuard: vi.fn() }));
 
 afterEach(() => {
