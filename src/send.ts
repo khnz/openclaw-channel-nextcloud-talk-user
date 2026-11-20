@@ -102,6 +102,8 @@ async function requestNextcloudTalkAsUser(params: {
   const body = params.form ? new URLSearchParams(params.form).toString() : undefined;
   const guarded = await fetchWithSsrFGuard({
     url: `${baseUrl}/ocs/v2.php/apps/spreed/api/${params.path}`,
+    // An HTTPS server URL stays HTTPS, also across redirects.
+    requireHttps: baseUrl.startsWith("https:"),
     beforeRequest: params.beforeRequest,
     init: {
       method: params.method,

@@ -44,6 +44,8 @@ export function createNextcloudTalkGuardedRequest(params: {
       url,
       signal,
       timeoutMs: REQUEST_TIMEOUT_MS,
+      // An HTTPS server URL stays HTTPS, also across redirects.
+      requireHttps: new URL(url).protocol === "https:",
       init: {
         method,
         headers: {
@@ -110,6 +112,10 @@ export async function startNextcloudTalkLoginFlow(params: {
   // The poll endpoint must be on the same server.
   if (new URL(endpoint).origin !== new URL(params.baseUrl).origin) {
     throw new Error("Nextcloud returned a poll endpoint on a different server; aborting.");
+  }
+  // The password is typed on the login page: with an HTTPS server URL it must be HTTPS too.
+  if (new URL(params.baseUrl).protocol === "https:" && new URL(loginUrl).protocol !== "https:") {
+    throw new Error("Nextcloud returned a login link without HTTPS for an HTTPS server; aborting.");
   }
 
   return {

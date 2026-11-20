@@ -16,6 +16,7 @@ function fakeNextcloud(options: {
   uidFor?: (auth: string) => string | undefined;
   appPasswords?: Set<string>;
   pollEndpoint?: string;
+  loginUrl?: string;
 }) {
   const calls: Call[] = [];
   let polls = 0;
@@ -33,7 +34,7 @@ function fakeNextcloud(options: {
         status: 200,
         text: JSON.stringify({
           poll: { token: "poll-token", endpoint: options.pollEndpoint ?? `${BASE}/login/v2/poll` },
-          login: `${BASE}/login/v2/flow/flow-token`,
+          login: options.loginUrl ?? `${BASE}/login/v2/flow/flow-token`,
         }),
       };
     }
@@ -177,6 +178,31 @@ describe("device login in the setup wizard", () => {
     const server = fakeNextcloud({ pollEndpoint: "https://evil.example.test/login/v2/poll" });
 
     await expect(run(cfg(), prompter(""), server.request)).rejects.toThrow(/different server/);
+  });
+
+  it("rejects a login link without HTTPS for an HTTPS server", async () => {
+    const server = fakeNextcloud({ loginUrl: "http://cloud.example.test/login/v2/flow/flow-token" });
+    await expect(run(cfg(), prompter(""), server.request)).rejects.toThrow(/without HTTPS/);
+    // Nothing beyond starting the flow: no poll, no credentials sent.
+    expect(server.calls).toHaveLength(1);
+  });
+
+  it("warns about an HTTP server URL and still signs in", async () => {
+    const http = "http://cloud.example.test";
+    const server = fakeNextcloud({
+      pollEndpoint: `${http}/login/v2/poll`,
+      loginUrl: `${http}/login/v2/flow/flow-token`,
+    });
+    const p = prompter(APP_PW);
+    const next = await run(cfg({ baseUrl: http }), p, server.request);
+    expect(talk(next)?.apiPassword).toBe(APP_PW);
+    expect(p.notes.join("\n")).toContain("HTTP without encryption");
+  });
+
+  it("does not warn about an HTTPS server URL", async () => {
+    const p = prompter(APP_PW);
+    await run(cfg(), p, fakeNextcloud({}).request);
+    expect(p.notes.join("\n")).not.toContain("without encryption");
   });
 
   it("asks when a password exists and leaves it unchanged without confirmation", async () => {

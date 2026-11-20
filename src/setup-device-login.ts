@@ -64,6 +64,15 @@ export async function runNextcloudTalkDeviceLoginStep(params: {
     ),
     "Nextcloud Talk (User) sign-in",
   );
+  if (baseUrl.startsWith("http://")) {
+    await prompter.note(
+      [
+        "The server URL uses HTTP without encryption: the device password and all messages",
+        "travel unencrypted. Only use this in a trusted private network; prefer HTTPS.",
+      ].join("\n"),
+      "Warning: no HTTPS",
+    );
+  }
 
   if (account.credentialStatus === "available") {
     const renew = await prompter.confirm({

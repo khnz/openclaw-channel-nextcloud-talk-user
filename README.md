@@ -61,6 +61,9 @@ requires `pluginApi >=2026.11.5`.
   revoked.
 - Shared sign-in state: a rejected password (`401`) or brute-force throttling (`429`) stops all
   parts immediately, without retries.
+- With an `https://` server URL every connection uses HTTPS, also across redirects; `notify_push`
+  only uses `wss://` on the server's host and port. An `http://` server URL keeps working over HTTP
+  (for example in a private network); the setup wizard shows a warning.
 - The app password is redacted in error texts; the plugin itself does not log message content.
 - `openclaw doctor` checks required settings, sign-in, Talk access, `notify_push`, `user_status`
   and overlap with the bot plugin.

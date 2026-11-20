@@ -64,6 +64,8 @@ export function createNextcloudTalkGuardedRawHttp(allowPrivateNetwork: boolean |
       url,
       init,
       timeoutMs,
+      // An HTTPS server URL stays HTTPS, also across redirects.
+      requireHttps: new URL(url).protocol === "https:",
       ...(signal ? { signal } : {}),
       policy: ssrfPolicyFromPrivateNetworkOptIn(allowPrivateNetwork),
       auditContext: "nextcloud-talk-user-receive",

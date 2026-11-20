@@ -79,6 +79,48 @@ type Capabilities = {
   userStatus: boolean;
 };
 
+function effectivePort(url: URL): string {
+  if (url.port) {
+    return url.port;
+  }
+  return url.protocol === "https:" || url.protocol === "wss:" ? "443" : "80";
+}
+
+/**
+ * WebSocket URL for notify_push. The pre_auth token is sent over this connection, so the
+ * advertised endpoint is only used on the server URL's host and port, and with an HTTPS
+ * server URL only as `wss:` (never downgraded to `ws:`). Otherwise `/push/ws` on the server
+ * URL's host is used, with `wss:` for HTTPS and `ws:` for HTTP.
+ */
+export function resolveNextcloudTalkPushUrl(
+  baseUrl: string,
+  advertisedUrl: string,
+): { url: string; ignoredAdvertised?: string } {
+  const base = new URL(baseUrl);
+  const secure = base.protocol === "https:";
+  const fallback = new URL("/push/ws", base);
+  fallback.protocol = secure ? "wss:" : "ws:";
+  let advertised: URL;
+  try {
+    advertised = new URL(advertisedUrl);
+  } catch {
+    return { url: fallback.toString(), ignoredAdvertised: "invalid URL" };
+  }
+  const allowedProtocols = secure ? ["wss:"] : ["ws:", "wss:"];
+  const reason = !allowedProtocols.includes(advertised.protocol)
+    ? secure
+      ? "not wss: although the server URL uses HTTPS"
+      : "not a WebSocket URL"
+    : advertised.hostname !== base.hostname
+      ? "different host"
+      : effectivePort(advertised) !== effectivePort(base)
+        ? "different port"
+        : undefined;
+  return reason
+    ? { url: fallback.toString(), ignoredAdvertised: reason }
+    : { url: advertised.toString() };
+}
+
 export function createNextcloudTalkReceiveMonitor(options: NextcloudTalkReceiveMonitorOptions) {
   const {
     client,
@@ -591,15 +633,11 @@ export function createNextcloudTalkReceiveMonitor(options: NextcloudTalkReceiveM
     if (!caps.pushWebsocket) {
       return undefined;
     }
-    const base = new URL(client.baseUrl);
-    const advertised = new URL(caps.pushWebsocket);
-    // Only use the advertised URL on the base URL host; otherwise fall back to that host.
-    if (advertised.hostname === base.hostname) {
-      return advertised.toString();
+    const resolved = resolveNextcloudTalkPushUrl(client.baseUrl, caps.pushWebsocket);
+    if (resolved.ignoredAdvertised) {
+      log(`[receive] notify_push: advertised endpoint ignored (${resolved.ignoredAdvertised}); using ${resolved.url}`);
     }
-    const fallback = new URL("/push/ws", base);
-    fallback.protocol = base.protocol === "https:" ? "wss:" : "ws:";
-    return fallback.toString();
+    return resolved.url;
   }
 
   async function runPush(caps: Capabilities) {

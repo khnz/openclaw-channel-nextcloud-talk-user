@@ -108,6 +108,8 @@ export async function resolveNextcloudTalkRoomInfo(params: {
   try {
     guarded = await fetchWithSsrFGuard({
       url: `${baseUrl}/ocs/v2.php/apps/spreed/api/v4/room/${roomToken}`,
+      // An HTTPS server URL stays HTTPS, also across redirects.
+      requireHttps: parsedBaseUrl.protocol === "https:",
       ...buildNextcloudTalkOcsOptions(auth, account.config.network?.dangerouslyAllowPrivateNetwork),
       auditContext: "nextcloud-talk-user.room-info",
       timeoutMs: params.timeoutMs ?? NEXTCLOUD_TALK_ROOM_INFO_TIMEOUT_MS,

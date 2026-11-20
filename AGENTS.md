@@ -71,6 +71,10 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
 - **No lost or duplicated messages.** The per-room cursor only advances after a successful handoff;
   do not replay old history when a room is seen for the first time.
 - **Sending:** keep the `referenceId` check before any retry so messages are never sent twice.
+- **HTTPS stays HTTPS.** With an `https://` server URL every connection must use HTTPS: pass
+  `requireHttps` to `fetchWithSsrFGuard` (checked on every redirect), and use `notify_push` only
+  as `wss://` on the server's host and port. An `http://` server URL is allowed (private
+  networks); the setup wizard only warns.
 - **Agent actions only in released rooms.** Reading history, sending text or files and reacting
   must pass `assertNextcloudTalkRoomAccess` (same rules as incoming messages: `groupPolicy`,
   `rooms`, `dmPolicy`, `allowFrom`, approved pairings). Membership alone is not enough; unknown
