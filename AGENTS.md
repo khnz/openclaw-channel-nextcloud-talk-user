@@ -10,9 +10,16 @@ Nextcloud user instead of a Talk bot. It is based on the OpenClaw `nextcloud-tal
 changes apply here.
 
 It must keep working side by side with the official `nextcloud-talk` plugin. Keep the plugin id,
-channel id, config section, state directory and log prefixes on `nextcloud-talk-user`. Never
-write the bot plugin's config or state; only the doctor reads its config to warn about rooms and
-senders that both plugins would answer.
+state directory and log prefixes on `nextcloud-talk-user`. Never write the bot plugin's config or
+state; only the doctor reads its config to warn about rooms and senders that both plugins would
+answer.
+
+There are two package variants. The default package uses the channel `nextcloud-talk-user`; the
+drop-in replacement (`npm run pack:dropInReplacement`) uses the channel `nextcloud-talk` of the
+official plugin. The channel identity lives only in `src/channel-id.ts`: never hard-code a channel
+id, use `NEXTCLOUD_TALK_CHANNEL_ID` and `NEXTCLOUD_TALK_CHANNEL_IDENTITY`. In the drop-in package,
+`openclaw doctor --fix` may disable the official plugin (`plugins.entries.nextcloud-talk.enabled`);
+nothing else of its config is changed.
 
 ## Commands
 
@@ -21,6 +28,7 @@ npm install --ignore-scripts
 npm run typecheck
 npm test
 npm run build   # clears dist/, compiles and regenerates channelConfigs in openclaw.plugin.json
+npm run pack:dropInReplacement   # drop-in package in build/, the repo stays unchanged
 ```
 
 Run all three before finishing a change. If you change `src/config-schema.ts`, run the build and
@@ -29,6 +37,7 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
 ## Layout
 
 - `index.ts`, `setup-entry.ts`, `*-api.ts`: plugin entry points referenced by `package.json`
+- `src/channel-id.ts`: channel identity of both package variants
 - `src/channel.ts`: channel plugin definition (wires everything together)
 - `src/receive/`: receive layer
   - `talk-client.ts`: HTTP client with a shared sign-in state
@@ -39,7 +48,9 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
 - `src/send.ts`, `src/outbound-media.ts`: sending text, reactions and files as the user
 - `src/device-login.ts`, `src/setup-*.ts`: setup wizard and Login Flow v2
 - `src/history.ts`, `src/message-actions.ts`: the `read` message action
-- `src/doctor*.ts`: `openclaw doctor` checks
+- `src/doctor*.ts`: `openclaw doctor` checks; `doctor-contract-api.ts` and `src/doctor-contract.ts`
+  are the plugin doctor contract of the drop-in package
+- `scripts/`: manifest generation and the drop-in package build
 - `types/openclaw-untyped.d.ts`: minimal types for SDK modules the published package ships
   without types
 - `test-support/`: rebuilt test helpers that the published `openclaw` package does not include
@@ -68,6 +79,7 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
 - Seven tests in `src/inbound.behavior.test.ts` are skipped on purpose: they need host test helpers
   (plugin registry, state database) that only exist in the OpenClaw monorepo.
 - `src/sdk-compat.test.ts` fails if code imports plugin SDK paths that OpenClaw retires.
+- `src/drop-in-replacement.test.ts` covers the drop-in variant (identity, schema, doctor).
 
 ## Conventions
 

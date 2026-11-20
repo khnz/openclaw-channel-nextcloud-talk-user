@@ -26,6 +26,7 @@ import { releaseNextcloudTalkGuardedResponse } from "./guarded-response.js";
 import { getOptionalNextcloudTalkRuntime } from "./runtime.js";
 import type { NextcloudTalkInboundMessage, NextcloudTalkSendResult } from "./types.js";
 import { parseWebDavFileId } from "./webdav.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 const OUTBOUND_FILE_PREFIX = /^openclaw-([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})-/u;
 const FILE_ID_REQUEST =
@@ -173,7 +174,7 @@ function fileReference(
 
 function echoIdentity(accountId: string, roomToken: string, actor: string, fileId: string) {
   return {
-    channel: "nextcloud-talk-user",
+    channel: NEXTCLOUD_TALK_CHANNEL_ID,
     accountId,
     conversationId: roomToken,
     sourceId: `file:${actor.toLowerCase()}:${fileId}`,
@@ -407,7 +408,7 @@ export async function sendMediaNextcloudTalk(
       ctx.text.trim(),
       resolveMarkdownTableMode({
         cfg: ctx.cfg,
-        channel: "nextcloud-talk-user",
+        channel: NEXTCLOUD_TALK_CHANNEL_ID,
         accountId: account.accountId,
       }),
     );
@@ -486,13 +487,13 @@ export async function sendMediaNextcloudTalk(
         ? ctx.replyToId
         : undefined;
     recordOutboundMessageIdentity({
-      channel: "nextcloud-talk-user",
+      channel: NEXTCLOUD_TALK_CHANNEL_ID,
       accountId: account.accountId,
       conversationId: roomToken,
       messageId,
     });
     getOptionalNextcloudTalkRuntime()?.channel.activity.record({
-      channel: "nextcloud-talk-user",
+      channel: NEXTCLOUD_TALK_CHANNEL_ID,
       accountId: account.accountId,
       direction: "outbound",
     });
@@ -500,7 +501,7 @@ export async function sendMediaNextcloudTalk(
       messageId,
       roomToken,
       receipt: createMessageReceiptFromOutboundResults({
-        results: [{ channel: "nextcloud-talk-user", conversationId: roomToken, messageId }],
+        results: [{ channel: NEXTCLOUD_TALK_CHANNEL_ID, conversationId: roomToken, messageId }],
         kind: asVoice && message.messageType === "voice-message" ? "voice" : "media",
         ...(replyToId ? { replyToId } : {}),
       }),

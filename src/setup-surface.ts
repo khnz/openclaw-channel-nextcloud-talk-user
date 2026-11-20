@@ -14,16 +14,17 @@ import {
 } from "./setup-core.js";
 import { runNextcloudTalkDeviceLoginStep } from "./setup-device-login.js";
 import type { CoreConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID, NEXTCLOUD_TALK_CHANNEL_IDENTITY } from "./channel-id.js";
 
 const t = createSetupTranslator();
 
-const channel = "nextcloud-talk-user" as const;
+const channel = NEXTCLOUD_TALK_CHANNEL_ID;
 
 export const nextcloudTalkSetupWizard: ChannelSetupWizard = {
   channel,
   stepOrder: "text-first",
   status: createStandardChannelSetupStatus({
-    channelLabel: "Nextcloud Talk (User)",
+    channelLabel: NEXTCLOUD_TALK_CHANNEL_IDENTITY.label,
     configuredLabel: t("wizard.channels.statusConfigured"),
     unconfiguredLabel: t("wizard.channels.statusNeedsSetup"),
     configuredHint: t("wizard.channels.statusConfigured"),

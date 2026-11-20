@@ -16,6 +16,7 @@ import {
   type NextcloudTalkRawHttp,
 } from "./receive/talk-client.js";
 import type { CoreConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID, NEXTCLOUD_TALK_DROP_IN_REPLACEMENT } from "./channel-id.js";
 
 /**
  * Doctor checks of the plugin.
@@ -110,18 +111,22 @@ async function checkServer(
 }
 
 export async function runNextcloudTalkDoctorSequence(
-  params: { cfg: CoreConfig },
+  params: { cfg: CoreConfig; dropInReplacement?: boolean },
   deps: NextcloudTalkDoctorDeps = {},
 ): Promise<ChannelDoctorSequenceResult> {
+  const dropInReplacement = params.dropInReplacement ?? NEXTCLOUD_TALK_DROP_IN_REPLACEMENT;
   const infoNotes: string[] = [];
   const warningNotes: string[] = [];
-  const botSection = (params.cfg.channels as Record<string, unknown> | undefined)?.["nextcloud-talk"];
+  // As a drop-in replacement there is no separate bot plugin: channels.nextcloud-talk is ours.
+  const botSection = dropInReplacement
+    ? undefined
+    : (params.cfg.channels as Record<string, unknown> | undefined)?.["nextcloud-talk"];
   for (const accountId of listNextcloudTalkAccountIds(params.cfg)) {
     const account = resolveNextcloudTalkAccount({ cfg: params.cfg, accountId });
     if (!account.enabled) {
       continue;
     }
-    const prefix = `- channels.nextcloud-talk-user.${account.accountId}`;
+    const prefix = `- channels.${NEXTCLOUD_TALK_CHANNEL_ID}.${account.accountId}`;
     const warn = (text: string) => warningNotes.push(`${prefix}: ${text}`);
     const info = (text: string) => infoNotes.push(`${prefix}: ${text}`);
 

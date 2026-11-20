@@ -112,6 +112,47 @@ More settings:
 Note: an entry in `rooms` turns the room list into an allowlist. If you control rooms through
 Nextcloud membership and still configure single rooms, add `"*": {}`.
 
+## Drop-in replacement for nextcloud-talk
+
+A second package variant registers the channel under the name of the official plugin,
+`nextcloud-talk`, instead of `nextcloud-talk-user`. Existing configuration, sessions, cron jobs and
+bindings that refer to the channel `nextcloud-talk` keep working. The plugin id stays
+`nextcloud-talk-user`.
+
+The config is read from `channels.nextcloud-talk`. Settings of the official plugin (`botSecret`,
+`botSecretFile`, `webhookPath`, `webhookPublicUrl`, `legacyWebhook`) are accepted and ignored, so an
+existing config keeps validating. OpenClaw accepts only one plugin per channel, so the official
+plugin must be disabled.
+
+Steps:
+
+1. Build the package:
+   ```bash
+   npm install --ignore-scripts
+   npm run pack:dropInReplacement
+   ```
+2. Disable the official plugin before installing, otherwise it may keep the channel when the
+   gateway restarts:
+   ```bash
+   openclaw config set plugins.entries.nextcloud-talk.enabled false
+   ```
+3. Only when switching from the default package of this plugin: move the settings from
+   `channels.nextcloud-talk-user` to `channels.nextcloud-talk` and remove the old section;
+   OpenClaw refuses the install while `channels.nextcloud-talk-user` is still configured.
+4. Install (switching between the variants requires `--accept-capabilities`, because the channel
+   changes):
+   ```bash
+   openclaw plugins install npm-pack:./build/nextcloud-talk-user-<version>-drop-in-replacement.tgz --force --accept-capabilities
+   ```
+5. When coming from the official plugin, add `apiUser` and the app password
+   (`openclaw configure`) to sign in as a regular user.
+6. Check: `openclaw doctor` warns while the official plugin is still enabled;
+   `openclaw doctor --fix` disables it.
+
+Back to the default package: move the settings back to `channels.nextcloud-talk-user`, remove
+`channels.nextcloud-talk` (or re-enable the official plugin with its own settings), then install
+the default package with `--force --accept-capabilities`.
+
 ## Install from source
 
 ```bash

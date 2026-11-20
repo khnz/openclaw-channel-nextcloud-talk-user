@@ -9,6 +9,7 @@ import {
   deliverInboundReplyWithMessageSendContext,
   sendDurableMessageBatch,
 } from "openclaw/plugin-sdk/channel-outbound";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 type ProviderDelivery = ChannelInboundTurnPlan<"provider_message_sending">["delivery"];
 type ReplyParams = Pick<
@@ -25,7 +26,7 @@ export async function deliverNextcloudTalkReply(params: ReplyParams) {
   const { cfg, accountId, agentId, ctxPayload, payload, info, to } = params;
   const final = await deliverInboundReplyWithMessageSendContext({
     cfg,
-    channel: "nextcloud-talk-user",
+    channel: NEXTCLOUD_TALK_CHANNEL_ID,
     accountId,
     agentId,
     ctxPayload,
@@ -41,7 +42,7 @@ export async function deliverNextcloudTalkReply(params: ReplyParams) {
   }
   const send = await sendDurableMessageBatch({
     cfg,
-    channel: "nextcloud-talk-user",
+    channel: NEXTCLOUD_TALK_CHANNEL_ID,
     accountId,
     to,
     payloads: [payload],

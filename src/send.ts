@@ -15,6 +15,7 @@ import { parseNextcloudTalkTarget, stripNextcloudTalkTargetPrefix } from "./norm
 import { resolveNextcloudTalkAllowlistMatch } from "./policy.js";
 import { getOptionalNextcloudTalkRuntime } from "./runtime.js";
 import type { CoreConfig, NextcloudTalkSendResult } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 const NEXTCLOUD_TALK_ERROR_SNIPPET_MAX_CHARS = 200;
 const NEXTCLOUD_TALK_SEND_TIMEOUT_MS = 30_000;
@@ -65,14 +66,14 @@ function resolveNextcloudTalkSendContext(opts: NextcloudTalkSendOpts) {
 
   if (!baseUrl) {
     throw new Error(
-      `Nextcloud Talk baseUrl missing for account "${account.accountId}" (set channels.nextcloud-talk-user.baseUrl).`,
+      `Nextcloud Talk baseUrl missing for account "${account.accountId}" (set channels.${NEXTCLOUD_TALK_CHANNEL_ID}.baseUrl).`,
     );
   }
   if (!apiUser || !apiPassword) {
     throw new Error(
       account.credentialStatus === "configured_unavailable"
-        ? `Nextcloud Talk app password is configured but unavailable for account "${account.accountId}" (check channels.nextcloud-talk-user.apiPassword/apiPasswordFile).`
-        : `Nextcloud Talk user credentials missing for account "${account.accountId}" (set channels.nextcloud-talk-user.apiUser and apiPassword).`,
+        ? `Nextcloud Talk app password is configured but unavailable for account "${account.accountId}" (check channels.${NEXTCLOUD_TALK_CHANNEL_ID}.apiPassword/apiPasswordFile).`
+        : `Nextcloud Talk user credentials missing for account "${account.accountId}" (set channels.${NEXTCLOUD_TALK_CHANNEL_ID}.apiUser and apiPassword).`,
     );
   }
 
@@ -296,7 +297,7 @@ async function resolveSendRoomToken(
   }
   if ((account.config.proactiveDm ?? "allowFrom") === "off") {
     throw new Error(
-      "Nextcloud Talk: starting direct conversations is disabled (channels.nextcloud-talk-user.proactiveDm: off)",
+      `Nextcloud Talk: starting direct conversations is disabled (channels.${NEXTCLOUD_TALK_CHANNEL_ID}.proactiveDm: off)`,
     );
   }
   const allowed = resolveNextcloudTalkAllowlistMatch({
@@ -305,7 +306,7 @@ async function resolveSendRoomToken(
   }).allowed;
   if (!allowed) {
     throw new Error(
-      `Nextcloud Talk: direct conversation with "${userId}" not allowed (not in channels.nextcloud-talk-user.allowFrom)`,
+      `Nextcloud Talk: direct conversation with "${userId}" not allowed (not in channels.${NEXTCLOUD_TALK_CHANNEL_ID}.allowFrom)`,
     );
   }
   const cacheKey = `${account.accountId}:${userId}`;
@@ -378,7 +379,7 @@ export async function sendMessageNextcloudTalk(
 
   const tableMode = resolveMarkdownTableMode({
     cfg,
-    channel: "nextcloud-talk-user",
+    channel: NEXTCLOUD_TALK_CHANNEL_ID,
     accountId: account.accountId,
   });
   const message = convertMarkdownTables(text.trim(), tableMode);
@@ -466,7 +467,7 @@ function buildSendResult(params: {
 }): NextcloudTalkSendResult {
   const { account, roomToken, referenceId, replyTo, messageId, timestamp } = params;
   getOptionalNextcloudTalkRuntime()?.channel.activity.record({
-    channel: "nextcloud-talk-user",
+    channel: NEXTCLOUD_TALK_CHANNEL_ID,
     accountId: account.accountId,
     direction: "outbound",
   });
@@ -478,7 +479,7 @@ function buildSendResult(params: {
     receipt: createMessageReceiptFromOutboundResults({
       results:
         receiptMessageId && receiptMessageId !== "unknown"
-          ? [{ channel: "nextcloud-talk-user", messageId: receiptMessageId, conversationId: roomToken }]
+          ? [{ channel: NEXTCLOUD_TALK_CHANNEL_ID, messageId: receiptMessageId, conversationId: roomToken }]
           : [],
       kind: "text",
       ...(replyTo ? { replyToId: replyTo } : {}),

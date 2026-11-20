@@ -3,13 +3,14 @@ import {
   createChannelSecretContract,
 } from "openclaw/plugin-sdk/channel-secret-basic-runtime";
 import { hasConfiguredNextcloudAccount } from "../configured-state.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 export const channelSecrets = createChannelSecretContract({
-  channelKey: "nextcloud-talk-user",
+  channelKey: NEXTCLOUD_TALK_CHANNEL_ID,
   account: ["apiPassword"],
   channel: ["apiPassword"],
   hasImplicitDefaultAccount: ({ context }) =>
-    hasConfiguredNextcloudAccount(context.sourceConfig.channels?.["nextcloud-talk-user"], context.env),
+    hasConfiguredNextcloudAccount(context.sourceConfig.channels?.[NEXTCLOUD_TALK_CHANNEL_ID], context.env),
   collect(params) {
     for (const field of ["apiPassword"]) {
       collectSimpleChannelFieldAssignments({

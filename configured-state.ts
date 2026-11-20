@@ -6,6 +6,7 @@ import {
 } from "openclaw/plugin-sdk/account-core";
 import type { OpenClawConfig } from "openclaw/plugin-sdk/config-contracts";
 import type { CoreConfig, NextcloudTalkAccountConfig } from "./src/types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./src/channel-id.js";
 
 type NextcloudAccount = NonNullable<NonNullable<CoreConfig["channels"]>["nextcloud-talk-user"]>;
 
@@ -13,11 +14,11 @@ export const {
   listAccountIds: listNextcloudTalkAccountIds,
   resolveDefaultAccountId: resolveDefaultNextcloudTalkAccountId,
   resolveAccountConfig: mergeNextcloudTalkAccountConfig,
-} = createAccountListHelpers<NextcloudTalkAccountConfig>("nextcloud-talk-user", {
+} = createAccountListHelpers<NextcloudTalkAccountConfig>(NEXTCLOUD_TALK_CHANNEL_ID, {
   normalizeAccountId,
   omitKeys: ["defaultAccount"],
   hasImplicitDefaultAccount: (cfg) =>
-    hasConfiguredNextcloudAccount(cfg.channels?.["nextcloud-talk-user"], process.env),
+    hasConfiguredNextcloudAccount(cfg.channels?.[NEXTCLOUD_TALK_CHANNEL_ID], process.env),
 });
 
 export function hasConfiguredNextcloudAccount(
@@ -38,7 +39,7 @@ export function hasConfiguredNextcloudTalkChannelState(params: {
   env?: NodeJS.ProcessEnv;
 }): boolean {
   // SAFETY: Nextcloud Talk's registered channel schema owns its account-config shape.
-  const channel = params.cfg.channels?.["nextcloud-talk-user"] as NextcloudAccount | undefined;
+  const channel = params.cfg.channels?.[NEXTCLOUD_TALK_CHANNEL_ID] as NextcloudAccount | undefined;
   if (channel?.enabled === false) {
     return false;
   }

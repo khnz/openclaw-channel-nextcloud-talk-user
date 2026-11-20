@@ -1,10 +1,15 @@
+import { NEXTCLOUD_TALK_CHANNEL_ID, NEXTCLOUD_TALK_CHANNEL_IDENTITY } from "./channel-id.js";
+
 export type NextcloudTalkTarget = { kind: "room"; token: string } | { kind: "user"; userId: string };
 
+/** Channel prefixes accepted in targets: the channel id and its aliases. */
+export const NEXTCLOUD_TALK_CHANNEL_PREFIX_RE = new RegExp(
+  `^(${[NEXTCLOUD_TALK_CHANNEL_IDENTITY.id, ...NEXTCLOUD_TALK_CHANNEL_IDENTITY.aliases].join("|")}):`,
+  "i",
+);
+
 function stripChannelPrefix(raw: string): string {
-  return raw
-    .trim()
-    .replace(/^(nextcloud-talk-user|nc-talk-user):/i, "")
-    .trim();
+  return raw.trim().replace(NEXTCLOUD_TALK_CHANNEL_PREFIX_RE, "").trim();
 }
 
 /**
@@ -35,13 +40,17 @@ export function normalizeNextcloudTalkMessagingTarget(raw: string): string | und
     return undefined;
   }
   return target.kind === "user"
-    ? `nextcloud-talk-user:user:${target.userId}`
-    : `nextcloud-talk-user:${target.token}`.toLowerCase();
+    ? `${NEXTCLOUD_TALK_CHANNEL_ID}:user:${target.userId}`
+    : `${NEXTCLOUD_TALK_CHANNEL_ID}:${target.token}`.toLowerCase();
 }
 
 export function looksLikeNextcloudTalkTargetId(raw: string): boolean {
   const trimmed = raw.trim();
-  if (/^(nextcloud-talk-user|nc-talk-user|room|user):/i.test(trimmed) || /^users\//i.test(trimmed)) {
+  if (
+    NEXTCLOUD_TALK_CHANNEL_PREFIX_RE.test(trimmed) ||
+    /^(room|user):/i.test(trimmed) ||
+    /^users\//i.test(trimmed)
+  ) {
     return true;
   }
 

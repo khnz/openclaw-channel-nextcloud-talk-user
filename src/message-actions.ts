@@ -19,8 +19,9 @@ import { readNextcloudTalkHistory } from "./history.js";
 import { stripNextcloudTalkTargetPrefix } from "./normalize.js";
 import { sendReactionNextcloudTalk } from "./send.js";
 import type { CoreConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
-const providerId = "nextcloud-talk-user";
+const providerId = NEXTCLOUD_TALK_CHANNEL_ID;
 
 function isAccountConfigured(account: ResolvedNextcloudTalkAccount): boolean {
   return Boolean(

@@ -55,8 +55,9 @@ import { getNextcloudTalkRuntime } from "./runtime.js";
 import { sendMessageNextcloudTalk } from "./send.js";
 import type { CoreConfig, NextcloudTalkInboundMessage } from "./types.js";
 import { canonicalizeNextcloudTalkNativeVoiceMedia } from "./voice-media.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
-const CHANNEL_ID = "nextcloud-talk-user" as const;
+const CHANNEL_ID = NEXTCLOUD_TALK_CHANNEL_ID;
 
 function hasAllowEntries(entries: string[]): boolean {
   return normalizeNextcloudTalkAllowlist(entries).length > 0;
@@ -235,7 +236,7 @@ export async function handleNextcloudTalkInbound(params: {
   };
   warnMissingProviderGroupPolicyFallbackOnce({
     providerMissingFallbackApplied,
-    providerKey: "nextcloud-talk-user",
+    providerKey: CHANNEL_ID,
     accountId: account.accountId,
     blockedLabel: GROUP_POLICY_BLOCKED_LABEL.room,
     log: (messageValue) => runtime.log?.(messageValue),
@@ -589,7 +590,7 @@ export async function handleNextcloudTalkInbound(params: {
       accountId: route.accountId,
       messageId: message.messageId,
       timestamp: message.timestamp,
-      from: isGroup ? `nextcloud-talk-user:room:${roomToken}` : `nextcloud-talk-user:${senderId}`,
+      from: isGroup ? `${CHANNEL_ID}:room:${roomToken}` : `${CHANNEL_ID}:${senderId}`,
       sender: { id: senderId, name: senderName || undefined },
       conversation: {
         kind: isGroup ? "group" : "direct",
@@ -602,7 +603,7 @@ export async function handleNextcloudTalkInbound(params: {
         accountId: route.accountId,
         routeSessionKey: route.sessionKey,
       },
-      reply: { to: `nextcloud-talk-user:${roomToken}`, originatingTo: `nextcloud-talk-user:${roomToken}` },
+      reply: { to: `${CHANNEL_ID}:${roomToken}`, originatingTo: `${CHANNEL_ID}:${roomToken}` },
       message: {
         body,
         bodyForAgent: agentBody,

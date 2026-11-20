@@ -3,6 +3,7 @@ import {
   resolveSecretInputString,
   type SecretInputStringResolutionMode,
 } from "openclaw/plugin-sdk/secret-input";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 export type NextcloudTalkCredentialUnavailableDiagnostic = Extract<
   ReturnType<typeof tryReadSecretFileSync>,
@@ -30,7 +31,7 @@ export function resolveNextcloudTalkApiCredentialsResult(params: {
 
   const inlinePassword = resolveSecretInputString({
     value: params.apiPassword,
-    path: "channels.nextcloud-talk-user.apiPassword",
+    path: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.apiPassword`,
     mode: params.mode,
   });
   if (inlinePassword.status === "available") {
@@ -49,7 +50,7 @@ export function resolveNextcloudTalkApiCredentialsResult(params: {
     // Existing apiPasswordFile paths may be symlinks or hardlinks. Keep that
     // contract while gaining the shared credential size and pinned-read checks.
     { rejectHardlinks: false },
-    { configPath: params.configPath ?? "channels.nextcloud-talk-user.apiPasswordFile" },
+    { configPath: params.configPath ?? `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.apiPasswordFile` },
   );
   if (result.status === "available") {
     return result.value

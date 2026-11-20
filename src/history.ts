@@ -7,6 +7,7 @@ import {
   readNextcloudTalkOcsData,
   type NextcloudTalkRawHttp,
 } from "./receive/talk-client.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 /**
  * History tool (message action "read").
@@ -51,7 +52,7 @@ export type NextcloudTalkHistoryMessage = {
 };
 
 export type NextcloudTalkHistoryResult = {
-  channel: "nextcloud-talk-user";
+  channel: typeof NEXTCLOUD_TALK_CHANNEL_ID;
   roomToken: string;
   mode: "latest" | "before" | "after" | "around" | "message";
   messages: NextcloudTalkHistoryMessage[];
@@ -297,7 +298,7 @@ export async function readNextcloudTalkHistory(params: {
   const oldest = sorted[0]?.id;
   const newest = sorted.at(-1)?.id;
   return {
-    channel: "nextcloud-talk-user",
+    channel: NEXTCLOUD_TALK_CHANNEL_ID,
     roomToken,
     mode,
     messages,

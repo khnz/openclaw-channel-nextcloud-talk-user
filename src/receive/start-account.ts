@@ -14,6 +14,7 @@ import { resolveNextcloudTalkAutoJoinPolicy } from "./auto-join.js";
 import { resolveNextcloudTalkNotificationLevel } from "./notification-level.js";
 import { createNextcloudTalkFileReceiveStateStore, resolveNextcloudTalkReceiveStatePath } from "./state.js";
 import { createNextcloudTalkGuardedRawHttp, createNextcloudTalkClient } from "./talk-client.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "../channel-id.js";
 
 /** Starts receiving for an account as its configured user and runs until the stop signal. */
 export async function startNextcloudTalkAccount(
@@ -36,7 +37,7 @@ export async function startNextcloudTalkAccount(
       const current = resolveNextcloudTalkAccount({ cfg, accountId: account.accountId });
       const runtime = resolveLoggerBackedRuntime(ctx.runtime, core.logging.getChildLogger());
       const logger = core.logging.getChildLogger({
-        channel: "nextcloud-talk-user",
+        channel: NEXTCLOUD_TALK_CHANNEL_ID,
         accountId: current.accountId,
       });
       const stop = new AbortController();
@@ -71,7 +72,7 @@ export async function startNextcloudTalkAccount(
         },
         deliver: async (message) => {
           core.channel.activity.record({
-            channel: "nextcloud-talk-user",
+            channel: NEXTCLOUD_TALK_CHANNEL_ID,
             accountId: current.accountId,
             direction: "inbound",
             at: message.timestamp,

@@ -12,11 +12,12 @@ import {
 import type { AllowlistMatch, ChannelGroupContext, GroupToolPolicyConfig } from "../runtime-api.js";
 import { resolveNextcloudTalkAccount } from "./accounts.js";
 import type { CoreConfig, NextcloudTalkRoomConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_PREFIX_RE } from "./normalize.js";
 
 export function normalizeNextcloudTalkAllowEntry(raw: string): string {
   const normalized = raw
     .trim()
-    .replace(/^(nextcloud-talk-user|nc-talk-user):/i, "")
+    .replace(NEXTCLOUD_TALK_CHANNEL_PREFIX_RE, "")
     .trim()
     .toLowerCase();
   // Keep typed actors (including users/*) intact; only bare IDs acquire the user kind.

@@ -22,10 +22,11 @@ import {
 } from "openclaw/plugin-sdk/string-coerce-runtime";
 import { resolveDefaultNextcloudTalkAccountId, resolveNextcloudTalkAccount } from "./accounts.js";
 import type { CoreConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID, NEXTCLOUD_TALK_CHANNEL_IDENTITY } from "./channel-id.js";
 
 const t = createSetupTranslator();
 
-const channel = "nextcloud-talk-user" as const;
+const channel = NEXTCLOUD_TALK_CHANNEL_ID;
 
 type NextcloudSetupInput = ChannelSetupInput & {
   baseUrl?: string;
@@ -76,7 +77,7 @@ const promptNextcloudTalkAllowFrom: ReturnType<
       t("wizard.nextcloudTalk.userIdHelpLogs"),
       t("wizard.nextcloudTalk.userIdHelpLowercase"),
       t("wizard.channels.docs", {
-        link: formatDocsLink("/channels/nextcloud-talk-user", "nextcloud-talk-user"),
+        link: formatDocsLink(NEXTCLOUD_TALK_CHANNEL_IDENTITY.docsPath, NEXTCLOUD_TALK_CHANNEL_IDENTITY.docsLabel),
       }),
     ],
     message: t("wizard.nextcloudTalk.allowFromPrompt"),

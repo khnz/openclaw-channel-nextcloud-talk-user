@@ -60,6 +60,7 @@ import { sendMessageNextcloudTalk } from "./send.js";
 import { nextcloudTalkSetupContract } from "./setup-core.js";
 import { nextcloudTalkSetupWizard } from "./setup-surface.js";
 import type { CoreConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID, NEXTCLOUD_TALK_CHANNEL_IDENTITY } from "./channel-id.js";
 
 const nextcloudTalkApprovalAuth = createChannelApprovalAuth({
   channelLabel: "Nextcloud Talk (User)",
@@ -86,7 +87,7 @@ function sendNextcloudTalkMessage(
 }
 
 const nextcloudTalkMessageAdapter = defineChannelMessageAdapter({
-  id: "nextcloud-talk-user",
+  id: NEXTCLOUD_TALK_CHANNEL_ID,
   durableFinal: {
     capabilities: {
       text: true,
@@ -109,13 +110,13 @@ const nextcloudTalkMessageAdapter = defineChannelMessageAdapter({
 });
 
 const meta = {
-  id: "nextcloud-talk-user",
-  label: "Nextcloud Talk (User)",
-  selectionLabel: "Nextcloud Talk as user (self-hosted)",
-  docsPath: "/channels/nextcloud-talk-user",
-  docsLabel: "nextcloud-talk-user",
+  id: NEXTCLOUD_TALK_CHANNEL_ID,
+  label: NEXTCLOUD_TALK_CHANNEL_IDENTITY.label,
+  selectionLabel: NEXTCLOUD_TALK_CHANNEL_IDENTITY.selectionLabel,
+  docsPath: NEXTCLOUD_TALK_CHANNEL_IDENTITY.docsPath,
+  docsLabel: NEXTCLOUD_TALK_CHANNEL_IDENTITY.docsLabel,
   blurb: "Self-hosted chat via Nextcloud Talk, signed in as a regular Nextcloud user.",
-  aliases: ["nc-talk-user"],
+  aliases: NEXTCLOUD_TALK_CHANNEL_IDENTITY.aliases,
   order: 65,
   quickstartAllowFrom: true,
 };
@@ -123,27 +124,27 @@ const meta = {
 const collectNextcloudTalkSecurityWarnings =
   createAllowlistProviderRouteAllowlistWarningCollector<ResolvedNextcloudTalkAccount>({
     providerConfigPresent: (cfg) =>
-      (cfg.channels as Record<string, unknown> | undefined)?.["nextcloud-talk-user"] !== undefined,
+      (cfg.channels as Record<string, unknown> | undefined)?.[NEXTCLOUD_TALK_CHANNEL_ID] !== undefined,
     resolveGroupPolicy: (account) => account.config.groupPolicy,
     resolveRouteAllowlistConfigured: (account) =>
       Boolean(account.config.rooms) && Object.keys(account.config.rooms ?? {}).length > 0,
     restrictSenders: {
       surface: "Nextcloud Talk rooms",
       openScope: "any member in allowed rooms",
-      groupPolicyPath: "channels.nextcloud-talk-user.groupPolicy",
-      groupAllowFromPath: "channels.nextcloud-talk-user.groupAllowFrom",
+      groupPolicyPath: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.groupPolicy`,
+      groupAllowFromPath: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.groupAllowFrom`,
     },
     noRouteAllowlist: {
       surface: "Nextcloud Talk rooms",
-      routeAllowlistPath: "channels.nextcloud-talk-user.rooms",
+      routeAllowlistPath: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.rooms`,
       routeScope: "room",
-      groupPolicyPath: "channels.nextcloud-talk-user.groupPolicy",
-      groupAllowFromPath: "channels.nextcloud-talk-user.groupAllowFrom",
+      groupPolicyPath: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.groupPolicy`,
+      groupAllowFromPath: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.groupAllowFrom`,
     },
   });
 const collectNextcloudTalkOpenGroupFindings = createConditionalWarningCollector.findings({
   collectWarnings: collectNextcloudTalkSecurityWarnings,
-  checkId: "channels.nextcloud-talk-user.groups.open",
+  checkId: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.groups.open`,
   severity: "warn",
   title: "Nextcloud Talk security warning",
 });
@@ -151,7 +152,7 @@ const collectNextcloudTalkOpenGroupFindings = createConditionalWarningCollector.
 export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
   createChatChannelPlugin({
     base: {
-      id: "nextcloud-talk-user",
+      id: NEXTCLOUD_TALK_CHANNEL_ID,
       meta,
       setupWizard: nextcloudTalkSetupWizard,
       capabilities: {
@@ -177,7 +178,7 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
           ResolvedNextcloudTalkAccount,
           CoreConfig
         >({
-          sectionKey: "nextcloud-talk-user",
+          sectionKey: NEXTCLOUD_TALK_CHANNEL_ID,
           listAccountIds: listNextcloudTalkAccountIds,
           resolveAccount: adaptScopedAccountAccessor(resolveNextcloudTalkAccount),
           inspectAccount: (cfg, accountId) => {
@@ -211,7 +212,7 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
         resolveToolPolicy: resolveNextcloudTalkGroupToolPolicy,
       },
       messaging: {
-        targetPrefixes: ["nextcloud-talk-user", "nc-talk-user"],
+        targetPrefixes: [NEXTCLOUD_TALK_CHANNEL_ID, ...NEXTCLOUD_TALK_CHANNEL_IDENTITY.aliases],
         normalizeTarget: normalizeNextcloudTalkMessagingTarget,
         inferTargetChatType: ({ to }) => {
           const parsed = parseNextcloudTalkTarget(to);
@@ -225,12 +226,12 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
             return buildChannelOutboundSessionRoute({
               cfg,
               agentId,
-              channel: "nextcloud-talk-user",
+              channel: NEXTCLOUD_TALK_CHANNEL_ID,
               accountId,
               peer: { kind: "direct", id: senderId },
               chatType: "direct",
-              from: `nextcloud-talk-user:${senderId}`,
-              to: `nextcloud-talk-user:user:${parsed.userId}`,
+              from: `${NEXTCLOUD_TALK_CHANNEL_ID}:${senderId}`,
+              to: `${NEXTCLOUD_TALK_CHANNEL_ID}:user:${parsed.userId}`,
             });
           }
           const roomId = stripNextcloudTalkTargetPrefix(target);
@@ -240,7 +241,7 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
           return buildChannelOutboundSessionRoute({
             cfg,
             agentId,
-            channel: "nextcloud-talk-user",
+            channel: NEXTCLOUD_TALK_CHANNEL_ID,
             accountId,
             // Room tokens do not reveal whether inbound keys by room or sender id.
             // Keep delivery behavior, but reject this route for explicit session selection.
@@ -250,8 +251,8 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
               id: roomId,
             },
             chatType: "group",
-            from: `nextcloud-talk-user:room:${roomId}`,
-            to: `nextcloud-talk-user:${roomId}`,
+            from: `${NEXTCLOUD_TALK_CHANNEL_ID}:room:${roomId}`,
+            to: `${NEXTCLOUD_TALK_CHANNEL_ID}:${roomId}`,
           });
         },
         targetResolver: {
@@ -293,7 +294,7 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
         logoutAccount: async ({ accountId, cfg }) => {
           const { nextConfig, changed, cleared } = clearAccountFieldsFromConfigSection({
             cfg,
-            sectionKey: "nextcloud-talk-user",
+            sectionKey: NEXTCLOUD_TALK_CHANNEL_ID,
             accountId,
             fields: ["apiPassword"],
           });
@@ -336,7 +337,7 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
     },
     security: {
       resolveDmPolicy: createScopedDmSecurityResolver<ResolvedNextcloudTalkAccount>({
-        channelKey: "nextcloud-talk-user",
+        channelKey: NEXTCLOUD_TALK_CHANNEL_ID,
         resolvePolicy: (account) => account.config.dmPolicy,
         resolveAllowFrom: (account) => account.config.allowFrom,
         policyPathSuffix: "dmPolicy",
@@ -354,7 +355,7 @@ export const nextcloudTalkPlugin: ChannelPlugin<ResolvedNextcloudTalkAccount> =
         sanitizeText: ({ text }) => sanitizeAssistantVisibleText(text),
       },
       attachedResults: {
-        channel: "nextcloud-talk-user",
+        channel: NEXTCLOUD_TALK_CHANNEL_ID,
         sendText: nextcloudTalkMessageAdapter.send.text,
         sendMedia: (ctx) =>
           nextcloudTalkMessageAdapter.send.media({

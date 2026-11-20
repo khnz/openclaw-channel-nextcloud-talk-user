@@ -12,6 +12,7 @@ import {
   type NextcloudTalkCredentialUnavailableDiagnostic,
 } from "./api-credentials.js";
 import type { CoreConfig, NextcloudTalkAccountConfig } from "./types.js";
+import { NEXTCLOUD_TALK_CHANNEL_ID } from "./channel-id.js";
 
 export type NextcloudTalkCredentialStatus = "available" | "configured_unavailable" | "missing";
 
@@ -51,7 +52,7 @@ function resolveNextcloudTalkUserCredentials(
     apiUser: merged.apiUser,
     apiPassword: merged.apiPassword,
     apiPasswordFile: merged.apiPasswordFile,
-    configPath: `channels.nextcloud-talk-user.accounts.${accountId}.apiPasswordFile`,
+    configPath: `channels.${NEXTCLOUD_TALK_CHANNEL_ID}.accounts.${accountId}.apiPasswordFile`,
     mode: "inspect",
   });
   if (result.status === "available") {
@@ -77,7 +78,7 @@ export function resolveNextcloudTalkAccount(params: {
   cfg: CoreConfig;
   accountId?: string | null;
 }): ResolvedNextcloudTalkAccount {
-  const baseEnabled = params.cfg.channels?.["nextcloud-talk-user"]?.enabled !== false;
+  const baseEnabled = params.cfg.channels?.[NEXTCLOUD_TALK_CHANNEL_ID]?.enabled !== false;
   const resolvedAccountId = params.accountId ?? resolveDefaultNextcloudTalkAccountId(params.cfg);
 
   const resolve = (accountId: string) => {
