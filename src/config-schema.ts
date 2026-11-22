@@ -91,10 +91,14 @@ function buildNextcloudTalkAccountSchemaBase(dropInReplacement: boolean) {
       markRead: z.boolean().optional(),
       /** online: user_status heartbeat (default); silent: no online status. */
       presence: z.enum(["online", "silent"]).optional(),
-      /** Message tool actions. messages: read history (action "read"), default: true. */
+      /**
+       * Message tool actions. messages: read history (action "read"), default: true.
+       * polls: read polls (action "read" with pollId) and vote (action "poll-vote"), default: true.
+       */
       actions: z
         .object({
           messages: z.boolean().optional(),
+          polls: z.boolean().optional(),
         })
         .strict()
         .optional(),

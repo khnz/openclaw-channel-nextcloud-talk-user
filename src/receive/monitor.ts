@@ -6,6 +6,8 @@ import {
 } from "./normalize-message.js";
 import type { NextcloudTalkReceiveState, NextcloudTalkReceiveStateStore } from "./state.js";
 import { NextcloudTalkAuthStoppedError, readNextcloudTalkOcsData, type NextcloudTalkClient } from "./talk-client.js";
+import { enrichNextcloudTalkPolls } from "./poll-enrich.js";
+import { fetchNextcloudTalkPoll } from "../poll.js";
 
 /**
  * Receive layer:
@@ -491,7 +493,14 @@ export function createNextcloudTalkReceiveMonitor(options: NextcloudTalkReceiveM
           }
           let dispatched = false;
           try {
-            dispatched = await options.deliver(outcome.message, room);
+            const inbound = await enrichNextcloudTalkPolls({
+              inbound: outcome.message,
+              raw: message,
+              fetchPoll: (pollId) =>
+                fetchNextcloudTalkPoll({ request: client.request, roomToken: token, pollId, signal }),
+              log,
+            });
+            dispatched = await options.deliver(inbound, room);
             deliveryFailures.delete(key);
           } catch (err) {
             if (err instanceof NextcloudTalkAuthStoppedError || !active()) {

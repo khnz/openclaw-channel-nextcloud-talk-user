@@ -28,7 +28,7 @@ requires `pluginApi >=2026.11.5`.
   `mediaAllowFrom`, size limit `mediaMaxMb`).
 - Shared locations reach the agent as text with name, coordinates and an OpenStreetMap link,
   also as reply context and in the history; other shared objects (polls, deck cards, …) are
-  labelled with their type.
+  labelled with their type; polls come with options and visible votes (see below).
 - Own messages and, by default, messages from Talk bots are ignored.
 - Read marker after dispatching to the agent; online status via `user_status` (when available).
 - Notification level per group room is managed automatically: "always" when the agent reacts to
@@ -45,7 +45,12 @@ requires `pluginApi >=2026.11.5`.
 **Agent tools**
 - Message actions `send`, `react` and `read` (history and context around a message, can be
   disabled with `actions.messages: false`).
-- All agent actions (sending text and files, reacting, reading history) only work in rooms
+- Polls: an incoming poll reaches the agent with question, options, status and the votes Talk
+  reveals to the account. `read` with `pollId` returns the current state, `poll-vote` votes as
+  the account (`pollOptionIndex`, 1-based). Talk shows votes only after the account has voted or
+  once the poll is closed; the plugin never votes just to see results. Can be disabled with
+  `actions.polls: false`.
+- All agent actions (sending text and files, reacting, reading history, polls) only work in rooms
   the configuration releases, by the same rules as incoming messages: group rooms per
   `groupPolicy` and `rooms` (never with `enabled: false`), one-to-one rooms only with a
   participant from `allowFrom` or an approved pairing (`dmPolicy`). Membership alone is not
@@ -120,6 +125,7 @@ More settings:
 | `deviceName` | `"openclaw nextcloud-talk-plugin"` | Device name in Nextcloud for the device login (new sign-ins only) |
 | `mediaMaxMb` | 20 | Attachment size limit in MB (unless OpenClaw sets another limit) |
 | `actions.messages` | `true` | Offer the history tool `read` |
+| `actions.polls` | `true` | Read polls (`read` with `pollId`) and vote (`poll-vote`) |
 
 ### Releasing rooms
 

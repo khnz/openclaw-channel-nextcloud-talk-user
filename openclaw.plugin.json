@@ -222,6 +222,9 @@
             "properties": {
               "messages": {
                 "type": "boolean"
+              },
+              "polls": {
+                "type": "boolean"
               }
             },
             "additionalProperties": false
@@ -616,6 +619,9 @@
                   "type": "object",
                   "properties": {
                     "messages": {
+                      "type": "boolean"
+                    },
+                    "polls": {
                       "type": "boolean"
                     }
                   },

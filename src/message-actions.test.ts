@@ -3,9 +3,12 @@ import type { CoreConfig, NextcloudTalkAccountConfig } from "./types.js";
 
 const sendReactionNextcloudTalk = vi.hoisted(() => vi.fn());
 const readNextcloudTalkHistory = vi.hoisted(() => vi.fn());
+const readNextcloudTalkPoll = vi.hoisted(() => vi.fn());
+const voteNextcloudTalkPoll = vi.hoisted(() => vi.fn());
 // mock-isolation: Message actions stop at the send boundary without making HTTP requests.
 vi.mock("./send.js", () => ({ sendReactionNextcloudTalk }));
 vi.mock("./history.js", () => ({ readNextcloudTalkHistory }));
+vi.mock("./poll.js", () => ({ readNextcloudTalkPoll, voteNextcloudTalkPoll }));
 const { nextcloudTalkMessageActions: actions } = await import("./message-actions.js");
 const configured = {
   baseUrl: "https://nc.example.com",
@@ -28,6 +31,8 @@ const act = (params: ActionContext["params"], context: Partial<ActionContext> = 
 beforeEach(() => {
   sendReactionNextcloudTalk.mockReset().mockResolvedValue(undefined);
   readNextcloudTalkHistory.mockReset().mockResolvedValue({ channel: "nextcloud-talk-user", messages: [] });
+  readNextcloudTalkPoll.mockReset().mockResolvedValue({ channel: "nextcloud-talk-user", poll: { pollId: "2" } });
+  voteNextcloudTalkPoll.mockReset().mockResolvedValue({ channel: "nextcloud-talk-user", ok: true });
 });
 
 it("returns null when no account is configured", () => {
@@ -54,6 +59,7 @@ it("scopes discovery to a specific account instead of another configured account
     "send",
     "react",
     "read",
+    "poll-vote",
   ]);
   expect(actions.describeMessageTool?.({ cfg: multi, accountId: "empty" })).toBeNull();
 });
@@ -111,8 +117,8 @@ it("offers and handles read with cursor parameters", async () => {
   });
 });
 
-it("hides and rejects read when actions.messages is false", async () => {
-  const off = config({ ...configured, actions: { messages: false } });
+it("hides and rejects read when actions.messages and actions.polls are false", async () => {
+  const off = config({ ...configured, actions: { messages: false, polls: false } });
   expect(actions.describeMessageTool?.({ cfg: off, accountId: "work" })?.actions).toEqual([
     "send",
     "react",
@@ -127,4 +133,53 @@ it("rejects read for unconfigured accounts", async () => {
   await expect(
     act({ to: "room:abc123" }, { action: "read", cfg: config(missingSecret), accountId: "work" }),
   ).rejects.toThrow(/disabled or not configured/);
+});
+
+it("rejects history read when only polls are enabled, but reads polls", async () => {
+  const off = config({ ...configured, actions: { messages: false } });
+  expect(actions.describeMessageTool?.({ cfg: off, accountId: "work" })?.actions).toEqual([
+    "send",
+    "react",
+    "read",
+    "poll-vote",
+  ]);
+  await expect(act({ to: "room:abc123" }, { action: "read", cfg: off, accountId: "work" })).rejects.toThrow(
+    /actions.messages: false/,
+  );
+  await act({ to: "room:abc123", pollId: 2 }, { action: "read", cfg: off, accountId: "work" });
+  expect(readNextcloudTalkPoll).toHaveBeenCalledWith(
+    expect.objectContaining({ roomToken: "abc123", pollId: "2" }),
+  );
+  expect(readNextcloudTalkHistory).not.toHaveBeenCalled();
+});
+
+it("votes with 1-based indexes or Talk option ids", async () => {
+  expect(actions.supportsAction?.({ action: "poll-vote" })).toBe(true);
+  await act({ to: "room:abc123", pollId: "2", pollOptionIndex: 2 }, { action: "poll-vote" });
+  expect(voteNextcloudTalkPoll).toHaveBeenLastCalledWith(
+    expect.objectContaining({ roomToken: "abc123", pollId: "2", optionIds: [1] }),
+  );
+  await act({ to: "room:abc123", pollId: "2", pollOptionIds: ["0", "2"] }, { action: "poll-vote" });
+  expect(voteNextcloudTalkPoll).toHaveBeenLastCalledWith(expect.objectContaining({ optionIds: [0, 2] }));
+});
+
+it.each([
+  [{ to: "room:abc123", pollOptionIndex: 1 }, /pollId is required/],
+  [{ to: "room:abc123", pollId: "2", pollOptionIndex: 0 }, /1-based/],
+  [{ to: "room:abc123", pollId: "2", pollOptionIndex: 1, pollOptionId: "0" }, /not both/],
+  [{ to: "room:abc123", pollId: "2", pollOptionIds: ["x"] }, /whole numbers/],
+])("rejects invalid poll-vote parameters %j", async (params, message) => {
+  await expect(act(params, { action: "poll-vote" })).rejects.toThrow(message);
+  expect(voteNextcloudTalkPoll).not.toHaveBeenCalled();
+});
+
+it("rejects poll actions when actions.polls is false", async () => {
+  const off = config({ ...configured, actions: { polls: false } });
+  expect(actions.describeMessageTool?.({ cfg: off, accountId: "work" })?.actions).toEqual(["send", "react", "read"]);
+  await expect(
+    act({ to: "room:abc123", pollId: "2", pollOptionIndex: 1 }, { action: "poll-vote", cfg: off, accountId: "work" }),
+  ).rejects.toThrow(/actions.polls: false/);
+  await expect(
+    act({ to: "room:abc123", pollId: "2" }, { action: "read", cfg: off, accountId: "work" }),
+  ).rejects.toThrow(/actions.polls: false/);
 });

@@ -44,13 +44,16 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
   - `monitor.ts`: notify_push, notifications, room sync, per-room cursor, retries
   - `normalize-message.ts`: Talk chat message -> inbound message
   - `rich-object.ts`: shared rich objects (locations, other types) -> readable text
+  - `poll-enrich.ts`: loads full poll details before a message is handed over
   - `state.ts`, `auto-join.ts`, `notification-level.ts`, `start-account.ts`
 - `src/inbound.ts`, `src/inbound-media.ts`: access checks and handoff to the agent
 - `src/send.ts`, `src/outbound-media.ts`: sending text, reactions and files as the user
 - `src/room-access.ts`, `src/room-info.ts`: room release check for agent actions, room type and
   one-to-one participant lookup
 - `src/device-login.ts`, `src/setup-*.ts`: setup wizard and Login Flow v2
-- `src/history.ts`, `src/message-actions.ts`: the `read` message action
+- `src/history.ts`, `src/message-actions.ts`: message actions `read` (history, polls) and
+  `poll-vote`
+- `src/poll.ts`: Talk poll API (load, render, vote)
 - `src/doctor*.ts`: `openclaw doctor` checks; `doctor-contract-api.ts` and `src/doctor-contract.ts`
   are the plugin doctor contract of the drop-in package
 - `scripts/`: manifest generation and the drop-in package build
@@ -76,10 +79,13 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
   `requireHttps` to `fetchWithSsrFGuard` (checked on every redirect), and use `notify_push` only
   as `wss://` on the server's host and port. An `http://` server URL is allowed (private
   networks); the setup wizard only warns.
-- **Agent actions only in released rooms.** Reading history, sending text or files and reacting
-  must pass `assertNextcloudTalkRoomAccess` (same rules as incoming messages: `groupPolicy`,
-  `rooms`, `dmPolicy`, `allowFrom`, approved pairings). Membership alone is not enough; unknown
-  rooms are refused. Only the pairing challenge to a sender who is not released yet may bypass it.
+- **Agent actions only in released rooms.** Reading history or polls, sending text or files,
+  reacting and voting must pass `assertNextcloudTalkRoomAccess` (same rules as incoming
+  messages: `groupPolicy`, `rooms`, `dmPolicy`, `allowFrom`, approved pairings). Membership alone
+  is not enough; unknown rooms are refused. Only the pairing challenge to a sender who is not
+  released yet may bypass it.
+- **Polls follow participant rules.** Pass on votes exactly as Talk reveals them to the account;
+  never vote just to see results. Check status, option range and `maxVotes` before voting.
 
 ## Tests
 
