@@ -529,3 +529,22 @@ it("retains media after dispatch rejects", async () => {
   await expect(fs.readFile(stagedPath)).resolves.toEqual(audio);
   expect(media.deleteMediaBuffer).not.toHaveBeenCalled();
 });
+
+it("hands a Talk thread over as reply thread and thread label", async () => {
+  const core = createPluginRuntimeMock();
+  const { receive } = install(core);
+  await receive({ text: "Im Thema", thread: { id: "1832", title: "Neues Thema: 2437" } });
+  expect(context(core).reply).toMatchObject({ messageThreadId: "1832" });
+  expect(context(core).supplemental).toEqual({
+    thread: { id: "1832", label: "Neues Thema: 2437", senderAllowed: true },
+  });
+  expect(context(core)).not.toHaveProperty("thread");
+});
+
+it("leaves thread facts out for messages outside a thread", async () => {
+  const core = createPluginRuntimeMock();
+  const { receive } = install(core);
+  await receive({ text: "Ohne Thema" });
+  expect(context(core).reply).not.toHaveProperty("messageThreadId");
+  expect(context(core)).not.toHaveProperty("supplemental");
+});

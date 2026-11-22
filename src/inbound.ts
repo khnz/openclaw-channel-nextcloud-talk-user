@@ -604,7 +604,12 @@ export async function handleNextcloudTalkInbound(params: {
         accountId: route.accountId,
         routeSessionKey: route.sessionKey,
       },
-      reply: { to: `${CHANNEL_ID}:${roomToken}`, originatingTo: `${CHANNEL_ID}:${roomToken}` },
+      reply: {
+        to: `${CHANNEL_ID}:${roomToken}`,
+        originatingTo: `${CHANNEL_ID}:${roomToken}`,
+        // Talk thread: becomes MessageThreadId, so replies go to the same thread (ctx.threadId).
+        ...(message.thread ? { messageThreadId: message.thread.id } : {}),
+      },
       message: {
         body,
         bodyForAgent: agentBody,
@@ -617,9 +622,18 @@ export async function handleNextcloudTalkInbound(params: {
         mentions: { canDetectMention: isGroup, wasMentioned: isGroup && wasMentioned },
       },
       ...(stagedMedia ? { media: [stagedMedia] } : {}),
-      // Talk thread: replies go to the same thread via ctx.threadId.
+      // Talk thread title becomes thread_label in the agent context. It is room structure that
+      // every participant sees (like the room name), not content of another sender.
       ...(message.thread
-        ? { thread: { id: message.thread.id, ...(message.thread.title ? { label: message.thread.title } : {}) } }
+        ? {
+            supplemental: {
+              thread: {
+                id: message.thread.id,
+                ...(message.thread.title ? { label: message.thread.title } : {}),
+                senderAllowed: true,
+              },
+            },
+          }
         : {}),
       extra: {
         GroupSubject: isGroup ? roomName || roomToken : undefined,

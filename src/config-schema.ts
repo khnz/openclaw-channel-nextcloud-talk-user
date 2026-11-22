@@ -92,6 +92,11 @@ function buildNextcloudTalkAccountSchemaBase(dropInReplacement: boolean) {
       /** online: user_status heartbeat (default); silent: no online status. */
       presence: z.enum(["online", "silent"]).optional(),
       /**
+       * Wait after a notify_push signal before fetching (ms, default 0 = at once). A value > 0
+       * bundles signals that arrive in quick succession into one fetch.
+       */
+      pushDebounceMs: z.number().int().min(0).max(10_000).optional(),
+      /**
        * Message tool actions. messages: read history (action "read"), default: true.
        * polls: read polls (action "read" with pollId) and vote (action "poll-vote"), default: true.
        */

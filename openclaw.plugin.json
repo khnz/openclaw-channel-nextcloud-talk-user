@@ -217,6 +217,11 @@
               "silent"
             ]
           },
+          "pushDebounceMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
           "actions": {
             "type": "object",
             "properties": {
@@ -614,6 +619,11 @@
                     "online",
                     "silent"
                   ]
+                },
+                "pushDebounceMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000
                 },
                 "actions": {
                   "type": "object",

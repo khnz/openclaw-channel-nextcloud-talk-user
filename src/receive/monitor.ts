@@ -66,11 +66,19 @@ export type NextcloudTalkReceiveMonitorOptions = {
    * error, so a permanent failure cannot block the room.
    */
   deliveryRetryDelaysMs?: readonly number[];
+  /**
+   * Wait after a notify_push signal before fetching notifications (default 0 = at once, no
+   * timer). A value > 0 bundles signals that arrive in quick succession.
+   */
+  pushDebounceMs?: number;
   signal: AbortSignal;
 };
 
 /** 5 s, 30 s, 2 min, 5 min, 10 min: about 17 minutes, longer than a short maintenance window. */
 export const DEFAULT_NEXTCLOUD_TALK_DELIVERY_RETRY_DELAYS_MS = [5_000, 30_000, 120_000, 300_000, 600_000] as const;
+
+/** Wait after a notify_push signal before fetching (config pushDebounceMs); 0 = fetch at once. */
+export const DEFAULT_NEXTCLOUD_TALK_PUSH_DEBOUNCE_MS = 0;
 
 const CHAT_PAGE_LIMIT = 100;
 const SEEN_LIMIT = 2_000;
@@ -140,6 +148,7 @@ export function createNextcloudTalkReceiveMonitor(options: NextcloudTalkReceiveM
     heartbeatIntervalMs = 5 * 60_000,
     maxCatchUp = 50,
     deliveryRetryDelaysMs = DEFAULT_NEXTCLOUD_TALK_DELIVERY_RETRY_DELAYS_MS,
+    pushDebounceMs = DEFAULT_NEXTCLOUD_TALK_PUSH_DEBOUNCE_MS,
   } = options;
 
   let state: NextcloudTalkReceiveState = { version: 1, rooms: {} };
@@ -691,10 +700,15 @@ export function createNextcloudTalkReceiveMonitor(options: NextcloudTalkReceiveM
             ws.close();
             resolve("rejected");
           } else if (data === "notify_notification") {
+            if (pushDebounceMs === 0) {
+              // No timer at all: fetch right away (no bundling of signals).
+              void checkNotifications().catch((err) => handleError("notifications", err));
+              return;
+            }
             clearTimeout(debounce);
             debounce = setTimeout(() => {
               void checkNotifications().catch((err) => handleError("notifications", err));
-            }, 300);
+            }, pushDebounceMs);
           }
         };
         ws.onerror = () => {};

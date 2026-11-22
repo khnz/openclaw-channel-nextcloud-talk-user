@@ -58,6 +58,7 @@ export async function startNextcloudTalkAccount(
         mentionAll: current.config.mentionAll === true,
         markRead: current.config.markRead !== false,
         presence: current.config.presence ?? "online",
+        pushDebounceMs: current.config.pushDebounceMs,
         createWebSocket: (url) => new WebSocket(url) as unknown as NextcloudTalkWebSocketLike,
         resolveNotificationLevel: (room) =>
           resolveNextcloudTalkNotificationLevel({ cfg, account: current, room }),

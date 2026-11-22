@@ -458,6 +458,7 @@ describe("receive monitor", () => {
       signal: controller.signal,
       pollIntervalMs: 60_000,
       pollIntervalWithoutPushMs: 60_000,
+      pushDebounceMs: 150,
       createWebSocket: (url) => {
         urls.push(url);
         const ws = {
@@ -487,6 +488,9 @@ describe("receive monitor", () => {
     await vi.waitFor(() => expect(monitor.snapshot().pushConnected).toBe(true));
     const before = server.calls.filter((c) => c.path.endsWith("/notifications")).length;
     sockets[0]!.onmessage?.({ data: "notify_notification" });
+    // pushDebounceMs: nothing is fetched before the wait is over.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(server.calls.filter((c) => c.path.endsWith("/notifications")).length).toBe(before);
     await vi.waitFor(() =>
       expect(server.calls.filter((c) => c.path.endsWith("/notifications")).length).toBeGreaterThan(before),
     );

@@ -118,6 +118,7 @@ More settings:
 | `rooms.<token>.allowFrom` / `.enabled` | – | Restrict senders per room / disable a room |
 | `ignoreBots` | `true` | Ignore messages from Talk bots |
 | `markRead` | `true` | Mark as read after dispatching to the agent |
+| `pushDebounceMs` | `0` | Debounce for push signals in ms (0–10000), see below |
 | `presence` | `"online"` | `"silent"`: no online status |
 | `mentionAll` | `false` | Treat `@all` as a mention |
 | `proactiveDm` | `"allowFrom"` | `"off"`: no proactive direct messages |
@@ -126,6 +127,11 @@ More settings:
 | `mediaMaxMb` | 20 | Attachment size limit in MB (unless OpenClaw sets another limit) |
 | `actions.messages` | `true` | Offer the history tool `read` |
 | `actions.polls` | `true` | Read polls (`read` with `pollId`) and vote (`poll-vote`) |
+
+`pushDebounceMs` debounces `notify_push` signals. Every signal restarts the timer; the
+notifications are fetched once it runs out. Several signals within the window lead to a single
+fetch, while a steady stream of signals keeps postponing it. With `0` (default) there is no timer
+and every signal triggers a fetch at once. Signals that are missed are covered by the room sync.
 
 ### Releasing rooms
 
