@@ -43,6 +43,7 @@ commit the updated `openclaw.plugin.json`; `node scripts/generate-manifest.mjs -
   - `talk-client.ts`: HTTP client with a shared sign-in state
   - `monitor.ts`: notify_push, notifications, room sync, per-room cursor, retries
   - `normalize-message.ts`: Talk chat message -> inbound message
+  - `rich-object.ts`: shared rich objects (locations, other types) -> readable text
   - `state.ts`, `auto-join.ts`, `notification-level.ts`, `start-account.ts`
 - `src/inbound.ts`, `src/inbound-media.ts`: access checks and handoff to the agent
 - `src/send.ts`, `src/outbound-media.ts`: sending text, reactions and files as the user

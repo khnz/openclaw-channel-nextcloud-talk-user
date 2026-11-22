@@ -162,6 +162,45 @@ describe("Talk message normalization", () => {
     });
   });
 
+  const geo = {
+    type: "geo-location",
+    id: "geo:48.8582602,2.2944991",
+    name: "Meeting point",
+    latitude: "48.8582602",
+    longitude: "2.2944991",
+  };
+  const geoText =
+    "[Location: Meeting point · lat 48.8582602, lon 2.2944991 · " +
+    "https://www.openstreetmap.org/?mlat=48.8582602&mlon=2.2944991#map=16/48.8582602/2.2944991]";
+
+  it("delivers a shared location with coordinates and map link", () => {
+    const outcome = run({
+      message: "{object}",
+      messageParameters: { actor: { type: "user", id: "alice", name: "Alice" }, object: geo },
+    });
+    expect(outcome.kind === "deliver" && outcome.message).toMatchObject({
+      text: geoText,
+      mediaType: "text",
+      mentionsSelf: false,
+    });
+  });
+
+  it("puts the location into the quote of a reply", () => {
+    const outcome = run({
+      message: "Bin gleich da",
+      parent: { ...base, id: 9, message: "{object}", messageParameters: { object: geo } },
+    });
+    expect(outcome.kind === "deliver" && outcome.message.quote).toMatchObject({ id: "9", body: geoText });
+  });
+
+  it("labels other rich objects with their type", () => {
+    const outcome = run({
+      message: "{object}",
+      messageParameters: { object: { type: "talk-poll", id: "3", name: "Pizza oder Pasta?" } },
+    });
+    expect(outcome.kind === "deliver" && outcome.message.text).toBe("[Shared object (talk-poll): Pizza oder Pasta?]");
+  });
+
   it("leaves unknown placeholders as they are", () => {
     expect(renderNextcloudTalkMessageText({ message: "a {unknown} b", messageParameters: {} })).toBe("a {unknown} b");
   });

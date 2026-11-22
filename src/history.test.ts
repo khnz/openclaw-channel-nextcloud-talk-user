@@ -130,6 +130,19 @@ describe("history tool", () => {
     expect(m?.threadId).toBeUndefined();
   });
 
+  it("reports shared locations with coordinates, also as reply context", async () => {
+    const geo = { type: "geo-location", id: "geo:48.8582602,2.2944991", name: "Meeting point" };
+    const location = msg(1, { message: "{object}", messageParameters: { object: geo } });
+    const server = fakeServer([location, msg(2, { message: "Danke", parent: location })]);
+    const [first, second] = (await read(server.http, {})).messages;
+
+    expect(first).toMatchObject({
+      text: expect.stringContaining("[Location: Meeting point · lat 48.8582602, lon 2.2944991 ·"),
+      object: { type: "geo-location", name: "Meeting point", latitude: 48.8582602, longitude: 2.2944991 },
+    });
+    expect(second?.replyTo?.text).toContain("lat 48.8582602, lon 2.2944991");
+  });
+
   it("omits system messages by default and counts them", async () => {
     const server = fakeServer([msg(1), msg(2, { messageType: "system", systemMessage: "reaction" }), msg(3)]);
     const result = await read(server.http, {});

@@ -26,6 +26,9 @@ requires `pluginApi >=2026.11.5`.
   counts as a mention; `@all` optionally (`mentionAll`).
 - Attachments and voice messages are downloaded via WebDAV as the account (sender allowlist
   `mediaAllowFrom`, size limit `mediaMaxMb`).
+- Shared locations reach the agent as text with name, coordinates and an OpenStreetMap link,
+  also as reply context and in the history; other shared objects (polls, deck cards, …) are
+  labelled with their type.
 - Own messages and, by default, messages from Talk bots are ignored.
 - Read marker after dispatching to the agent; online status via `user_status` (when available).
 - Notification level per group room is managed automatically: "always" when the agent reacts to

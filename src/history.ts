@@ -1,5 +1,6 @@
 import type { ResolvedNextcloudTalkAccount } from "./accounts.js";
 import { renderNextcloudTalkMessageText, type NextcloudTalkChatMessage } from "./receive/normalize-message.js";
+import { parseNextcloudTalkGeoLocation } from "./receive/rich-object.js";
 import {
   createNextcloudTalkGuardedRawHttp,
   createNextcloudTalkClient,
@@ -49,7 +50,7 @@ export type NextcloudTalkHistoryMessage = {
   threadTitle?: string;
   replyTo?: { id: string; deleted?: true; sender?: { id: string; name: string }; text?: string };
   attachment?: { fileId?: string; name: string; mimeType: string; sizeBytes?: number; path?: string };
-  object?: { type: string; id?: string; name?: string };
+  object?: { type: string; id?: string; name?: string; latitude?: number; longitude?: number };
   reactions?: Record<string, number>;
 };
 
@@ -162,6 +163,11 @@ export function toNextcloudTalkHistoryMessage(raw: RawMessage, selfUser: string)
       ...(str(object.id) ? { id: str(object.id) } : {}),
       ...(str(object.name) ? { name: str(object.name) } : {}),
     };
+    const location = parseNextcloudTalkGeoLocation(object);
+    if (location) {
+      message.object.latitude = Number(location.latitude);
+      message.object.longitude = Number(location.longitude);
+    }
   }
   if (raw.reactions && !Array.isArray(raw.reactions) && Object.keys(raw.reactions).length > 0) {
     message.reactions = raw.reactions as Record<string, number>;

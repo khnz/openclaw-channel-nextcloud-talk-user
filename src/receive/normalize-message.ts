@@ -1,4 +1,5 @@
 import type { NextcloudTalkInboundMessage, NextcloudTalkInboundQuote } from "../types.js";
+import { renderNextcloudTalkRichObject } from "./rich-object.js";
 
 /**
  * Turns a message from the Talk chat API (Talk 25) into the message object that
@@ -56,7 +57,10 @@ function str(value: unknown): string {
   return typeof value === "string" ? value : typeof value === "number" ? String(value) : "";
 }
 
-/** Replaces {placeholders} with readable text; mentions become @Name, files are dropped. */
+/**
+ * Replaces {placeholders} with readable text; mentions become @Name, files are dropped,
+ * rich objects (locations, polls, …) become a labelled summary.
+ */
 export function renderNextcloudTalkMessageText(message: Pick<NextcloudTalkChatMessage, "message" | "messageParameters">): string {
   const parameters = params(message);
   return message.message
@@ -67,6 +71,9 @@ export function renderNextcloudTalkMessageText(message: Pick<NextcloudTalkChatMe
       }
       if (key === "file") {
         return "";
+      }
+      if (key === "object" || str(parameter.type) === "geo-location") {
+        return renderNextcloudTalkRichObject(parameter);
       }
       const name = str(parameter.name) || str(parameter.id);
       if (key.startsWith("mention-")) {
