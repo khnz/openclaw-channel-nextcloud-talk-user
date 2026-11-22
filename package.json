@@ -1,6 +1,6 @@
 {
   "name": "nextcloud-talk-user",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "OpenClaw channel plugin: Nextcloud Talk as a regular Nextcloud user (instead of a Talk bot).",
   "license": "MIT",
   "author": "Robert Gerlach",
